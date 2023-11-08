@@ -1,0 +1,100 @@
+import kotlin.reflect.KClass
+
+open class Table {
+    //    var columns = mutableListOf<Column>()
+    open var columns = mutableMapOf<String, KClass<*>>()
+    open var rows = mutableListOf<Row>()
+
+    fun <T : Any> column(Name: String, Class: KClass<T>) {
+        columns[Name] = Class
+    }
+
+    fun row(callback: Row.() -> Int): Row {
+        val r = Row()
+        r.columns = columns
+        if (callback(r) == 1) {
+            rows.add(r)
+        } else println("Ошибка")
+        return r
+    }
+
+    fun render() {
+        val t = TableDraw()
+        t.columns = columns
+        t.rows = rows
+        t.DO()
+    }
+}
+class Row: Table()
+{
+    var data = mutableMapOf<String, Any>()
+
+    fun cell(column:String, value:Any): Int{
+        if (column in columns.keys) {
+            if (columns[column] == value::class)
+                data[column] = value;
+            return 1
+        }
+        return 0
+    }
+}
+
+class TableDraw: Table(){
+    fun print_line(num:Int, numSpace: Int){
+        for (i in 1 .. num) {
+            print("+")
+            for (i in 1 .. numSpace) print("-")
+        }
+
+        print("+\n")
+    }
+    fun DO(){
+        val n = columns.size
+        val numSpace = 8
+        print_line(n, numSpace)
+        for (cl in columns.keys) {
+            print("|")
+            print("%${numSpace}s".format(cl))
+        }
+        print("|\n")
+        print_line(n, numSpace)
+        for (rs in rows) {
+            for (cl in columns.keys) {
+                print("|")
+                if (cl in rs.data.keys) {
+                    print("%${numSpace}s".format(rs.data[cl]))
+                }
+                else {
+                    for (i in 1 .. numSpace) print(" ")
+                }
+            }
+            print("|\n")
+        }
+        print_line(n, numSpace)
+    }
+}
+
+fun table(callback: Table.() -> Unit): Table {
+    val t = Table()
+    callback(t)
+    return t
+}
+
+fun main(args: Array<String>) {
+    table {
+        column("ID", Int::class)
+        column("Name", String::class)
+        column("Age", Int::class)
+        row {
+            cell("ID", 1)
+            cell("Name", "Katya")
+            cell("Age", 22)
+        }
+        row{
+            cell("ID", 2)
+            cell("Name", 12)
+            cell("Age", 15)
+        }
+    }.render()
+}
+
